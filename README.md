@@ -29,3 +29,6 @@ It reports what the header says. It does not verify DKIM signatures or look up D
 ## Licence
 
 MIT. Written by William Baptist.
+
+
+Any bugs or suggestions, contact me: baptistsec
