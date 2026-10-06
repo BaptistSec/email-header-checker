@@ -1,0 +1,10 @@
+eval(require('fs').readFileSync('header-check.js','utf8')+';global.A=tddAnalyse');
+var a=require('assert');
+var good='Return-Path: <bounce@example.com>\nAuthentication-Results: mx.example.net;\n dkim=pass header.d=example.com;\n spf=pass smtp.mailfrom=example.com;\n dmarc=pass header.from=example.com\nFrom: A <a@example.com>\n';
+var r=A(good);a.equal(r.verdict,'good');a.equal(r.res.dkim[0].d,'example.com');a.equal(r.from,'example.com');
+var bad='Authentication-Results: mx; spf=fail smtp.mailfrom=evil.test; dkim=none; dmarc=fail header.from=bank.test\nFrom: "Bank" <x@bank.test>\nReply-To: <help@other.test>\nReturn-Path: <a@evil.test>';
+r=A(bad);a.equal(r.verdict,'bad');a.ok(r.notes.some(n=>/Reply-To/.test(n.t)));a.ok(r.notes.some(n=>/Return-Path/.test(n.t)));
+r=A('From: a@b.com\nSubject: hi');a.equal(r.hasAR,false);a.equal(r.verdict,'mixed');
+r=A('Authentication-Results: mx; spf=softfail smtp.mailfrom=x.com; dkim=pass header.d=x.com; dmarc=pass header.from=x.com\nFrom: a@x.com');a.equal(r.verdict,'mixed');
+r=A('authentication-results: mx;\r\n spf=pass smtp.mailfrom=sub.x.com;\r\n dkim=pass;\r\n dmarc=pass\r\nFrom: a@x.com\r\nReturn-Path: <b@sub.x.com>');a.equal(r.verdict,'good');a.ok(!r.notes.length);
+console.log('all pass');
