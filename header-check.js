@@ -1,3 +1,58 @@
+// Reads the Authentication-Results header of an email and works out a plain verdict.
+// This file is copied word for word into index.html. test.js checks that the two match.
+
+// Join folded header lines back into one line each
+function tddUnfold(t){return t.replace(/\r\n?/g,'\n').replace(/\n[ \t]+/g,' ');}
+
+// Pull the domain out of an address such as <name@example.com>
+function tddDomain(v){if(!v)return '';var m=v.match(/@([A-Za-z0-9.\-]+)/);return m?m[1].toLowerCase().replace(/\.$/,''):'';}
+
+// Return every value of a named header, in the order they appear
+function tddHeader(lines,name){var r=[],re=new RegExp('^'+name+':\\s*(.*)$','i');lines.forEach(function(l){var m=l.match(re);if(m)r.push(m[1]);});return r;}
+
+function tddAnalyse(raw){
+ var lines=tddUnfold(raw).split('\n');
+ var ar=tddHeader(lines,'Authentication-Results');
+ var res={spf:[],dkim:[],dmarc:[]};
+ var notes=[];
+
+ // Only the topmost header counts, because it is the one your own mail provider added.
+ // Lower ones can come from earlier servers, or from the sender.
+ if(ar.length){
+  ar[0].split(';').slice(1).forEach(function(p){
+   var m=p.trim().match(/^(spf|dkim|dmarc)\s*=\s*([a-z]+)/i);
+   if(m){var d=p.match(/(?:header\.d|header\.from|smtp\.mailfrom)\s*=\s*"?([^\s";()]+)/i);
+    res[m[1].toLowerCase()].push({r:m[2].toLowerCase(),d:d?d[1].toLowerCase():''});}
+  });
+ }
+ if(ar.length>1)notes.push({lvl:'info',t:ar.length+' Authentication-Results headers found. Only the topmost one is used, because that is the one your own provider added.'});
+
+ var from=tddDomain(tddHeader(lines,'From')[0]),
+  rp=tddDomain(tddHeader(lines,'Return-Path')[0]),
+  rt=tddDomain(tddHeader(lines,'Reply-To')[0]);
+
+ // DMARC passes when SPF or DKIM passes and matches the From domain, so a DMARC pass explains one failing check
+ var dmarcPass=res.dmarc.some(function(x){return x.r==='pass';});
+ var unexplained=false;
+
+ if(!ar.length)notes.push({lvl:'warn',t:'No Authentication-Results header found. Your mail provider may not add one, or the header was not copied in full.'});
+ ['spf','dkim','dmarc'].forEach(function(k){
+  if(ar.length&&!res[k].length)notes.push({lvl:'warn',t:k.toUpperCase()+' result not present in the header.'});
+  res[k].forEach(function(x){
+   var n=k.toUpperCase()+(x.d?' for '+x.d:'');
+   if(x.r==='fail'&&dmarcPass&&k!=='dmarc')notes.push({lvl:'warn',t:n+' failed, but DMARC passed through the other check. This often happens when a message has been forwarded or sent through a mailing list.'});
+   else if(x.r==='fail'){unexplained=true;notes.push({lvl:'bad',t:n+' failed. Treat this message with suspicion.'});}
+   else if(x.r==='softfail'||x.r==='temperror'||x.r==='permerror')notes.push({lvl:'warn',t:n+' returned '+x.r+'.'});
+  });
+ });
+ if(from&&rp&&from!==rp&&!(from.slice(-rp.length-1)==='.'+rp||rp.slice(-from.length-1)==='.'+from))
+  notes.push({lvl:'info',t:'From domain ('+from+') differs from Return-Path domain ('+rp+'). Common for newsletters and bulk senders, but also seen in spoofing.'});
+ if(from&&rt&&from!==rt)notes.push({lvl:'warn',t:'Reply-To domain ('+rt+') differs from From domain ('+from+'). Replies would go somewhere else.'});
+
+ var allPass=['spf','dkim','dmarc'].every(function(k){return res[k].some(function(x){return x.r==='pass';});});
+ var verdict=unexplained?'bad':(allPass&&!notes.some(function(n){return n.lvl==='warn';})?'good':'mixed');
+ return {res:res,from:from,rp:rp,rt:rt,notes:notes,verdict:verdict,hasAR:ar.length>0,extra:Math.max(0,ar.length-1)};
+}
 function tddUnfold(t){return t.replace(/\r\n?/g,'\n').replace(/\n[ \t]+/g,' ');}
 function tddDomain(v){if(!v)return '';var m=v.match(/@([A-Za-z0-9.\-]+)/);return m?m[1].toLowerCase().replace(/\.$/,''):'';}
 function tddHeader(lines,name){var r=[],re=new RegExp('^'+name+':\\s*(.*)$','i');lines.forEach(function(l){var m=l.match(re);if(m)r.push(m[1]);});return r;}
