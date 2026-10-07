@@ -2,6 +2,8 @@
 
 Published by William Baptist | Tidy Desk Digital
 
+[tidydesksoftware@outlook.com](mailto:tidydesksoftware@outlook.com)
+
 A free tool for reading an email's headers, the technical details stored above its message text. It runs on your computer. It does not decide whether an email is safe.
 
 Open `index.html` in a current browser, paste the original message headers and choose **Inspect headers**. The page starts with **Unverified headers**. If you do not know how to find the original headers, use your email provider's instructions or ask the person managing your email.
