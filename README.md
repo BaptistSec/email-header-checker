@@ -47,6 +47,8 @@ You do not need these steps to use the page. They are for people testing the cod
 
 From this folder, run:
 
+Swipe code sideways if a line is cut off.
+
 ```sh
 node test.js
 ```
