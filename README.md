@@ -29,7 +29,7 @@ Run `node test.js` from this folder. The release has 56 parser regression tests.
 
 Browser tests are in `browser-test.js`. In a disposable development checkout, run `npm install playwright`, then set `CHROME_PATH` to your installed Chrome executable if it is not `/usr/bin/google-chrome` and run `node browser-test.js`. Installing Playwright beside the test runner lets Node find it. The runner writes Desktop-QA.png and Mobile-QA.png into that checkout. Browser dependencies are test-only and not needed to use the tool.
 
-The included test results describe checks actually run against this build. They are not an independent QA verdict. Scope: local reported-header inspection, not a validator or phishing detector.
+GitHub Actions runs `node test.js` on Node 22 when the shared parser, parser tests or parser workflow changes, and on manual dispatch. Browser checks are separate and are not run by this workflow. No test-results file is bundled in this repository. A passing test run is not an independent QA verdict or proof that a message is safe. Scope: local reported-header inspection, not a validator or phishing detector.
 
 ## Licence
 
