@@ -27,7 +27,7 @@ Normative background: RFC 8601, especially sections 1.6, 2.5 and 7: https://www.
 
 Run `node test.js` from this folder. The release has 56 parser regression tests.
 
-Browser tests are in `browser-test.js`. Install Playwright outside the product folder or in a disposable development checkout (`npm install playwright`), then set `CHROME_PATH` if Chrome is not at `/usr/bin/google-chrome` and run `node browser-test.js`. Browser dependencies are test-only and not needed to use the tool.
+Browser tests are in `browser-test.js`. In a disposable development checkout, run `npm install playwright`, then set `CHROME_PATH` to your installed Chrome executable if it is not `/usr/bin/google-chrome` and run `node browser-test.js`. Installing Playwright beside the test runner lets Node find it. The runner writes Desktop-QA.png and Mobile-QA.png into that checkout. Browser dependencies are test-only and not needed to use the tool.
 
 The included test results describe checks actually run against this build. They are not an independent QA verdict. Scope: local reported-header inspection, not a validator or phishing detector.
 
