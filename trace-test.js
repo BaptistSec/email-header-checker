@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict');require('./header-check.js');const T=require('./trace-check.js');let n=0;
+function test(name,fn){fn();n++;console.log('PASS '+name);}
+const date='Wed, 07 Oct 2026 23:30:00 +0100';
+test('numeric zone converted',()=>assert.equal(T.timestamp(date),'2026-10-07T22:30:00.000Z'));
+test('wrong weekday rejected',()=>assert.equal(T.timestamp(date.replace('Wed','Thu')),null));
+for(const d of ['Wed, 31 Feb 2026 12:00:00 +0000','Wed, 07 Oct 2026 24:00:00 +0000','Wed, 07 Oct 2026 12:00:60 +0000','Wed, 07 Oct 2026 12:00:00 +2460','Wed, 07 Oct 2026 12:00:00 GMT','7 Oct 2026 12:00 +0000'])test('unsupported date '+d,()=>assert.equal(T.timestamp(d),null));
+test('comments with semicolons',()=>assert.equal(T.splitDate('from a.example (x;y) by b.example; '+date).route,'from a.example (x;y) by b.example'));
+test('quoted semicolons',()=>assert.equal(T.splitDate('from "a;b" by b.example; '+date).date,date));
+test('unclosed comment raw only',()=>assert.equal(T.splitDate('from a (x; '+date),null));
+test('unbalanced close raw only',()=>assert.equal(T.splitDate('from a ) ; '+date),null));
+test('body ignored',()=>assert.equal(T.analyse('From: a@example.com\n\nReceived: from evil by evil; '+date).length,0));
+test('folded CRLF, raw order retained',()=>{const rows=T.analyse('Received: from first.example\r\n by second.example; '+date+'\r\nReceived: from older.example by first.example; '+date);assert.equal(rows.length,2);assert.equal(rows[0].from,'first.example');assert.equal(rows[0].by,'second.example');assert.equal(rows[1].from,'older.example');});
+test('missing date retains field',()=>{const r=T.analyse('Received: from a.example by b.example')[0];assert.equal(r.utc,null);assert.equal(r.from,null);assert.equal(r.raw,'from a.example by b.example');});
+test('injection preserved only as data',()=>{const r=T.analyse('Received: <img src=x onerror=alert(1)>; '+date)[0];assert.equal(r.from,null);assert.ok(r.raw.includes('<img'));});
+test('comment host ignored',()=>{const r=T.analyse('Received: (from evil.example) from good.example by mx.example; '+date)[0];assert.equal(r.from,'good.example');});
+test('duplicate from unresolved',()=>assert.equal(T.analyse('Received: from a.example from b.example by mx.example; '+date)[0].from,null));
+test('supported plus unsupported from duplicate unresolved',()=>assert.equal(T.analyse('Received: from good.example from [1.2.3.4] by mx.example; '+date)[0].from,null));
+test('supported plus unsupported by duplicate unresolved',()=>assert.equal(T.analyse('Received: from good.example by mx.example by [1.2.3.4]; '+date)[0].by,null));
+test('repeated top level delimiters raw only',()=>assert.equal(T.splitDate('from a.example by mx.example; junk; '+date),null));
+test('trailing delimiter raw only',()=>assert.equal(T.splitDate('from a.example by mx.example; '+date+';'),null));
+test('overlong complete host unresolved',()=>assert.equal(T.analyse('Received: from '+Array(9).fill('a'.repeat(60)).join('.')+' by mx.example; '+date)[0].from,null));
+test('single label host intentional',()=>assert.equal(T.analyse('Received: from localhost by mx.example; '+date)[0].from,'localhost'));
+test('minus zero preserves UTC interpretation',()=>assert.equal(T.timestamp('Wed, 07 Oct 2026 12:00:00 -0000'),'2026-10-07T12:00:00.000Z'));
+console.log(n+' trace tests passed');
