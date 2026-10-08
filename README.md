@@ -66,3 +66,6 @@ What the tool does: read reported header checks on your computer. This is not a 
 ## Licence
 
 The software uses the MIT licence, a named software-use licence. Read its permissions and conditions in [LICENSE](LICENSE).
+
+
+Private 2.2 trace candidate: adds a separate unverified Received-field view. Original authentication parser unchanged. Only conventional from/by host tokens and weekday dates with numeric offsets are extracted. Unsupported fields remain accessible as original text. No verified route, hop sorting, delay inference or safe-mail verdict. Run node test.js, node trace-test.js and the browser suite before review. Not approved for publication.
